@@ -13,11 +13,16 @@ def run_batch(request):
         client, collection = db_call()
 
         if client is not None and collection is not None:
-            # クエリでsortされたUser情報格納変数
+            #------------------------------------------------------------
+            # DBに接続してuser情報を取得
+            #------------------------------------------------------------
             document_count, documents = db_read(collection)
 
             print(f"取得したドキュメントの数は: {document_count}")
-            # 同期的スクレイピング実行
+
+            #------------------------------------------------------------
+            # GitHubAPIに接続
+            #------------------------------------------------------------
             get_contribute_main(documents)
 
             # DB閉じる

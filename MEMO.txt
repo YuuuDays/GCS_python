@@ -2,3 +2,6 @@
 .venv\Scripts\Activate
 #アクティベート終了
 deactivate
+
+# ②DBG(xxxxはポート:デフォ8080)
+functions-framework --target=run_batch --debug --port=xxxx
