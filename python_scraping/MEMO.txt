@@ -1,0 +1,6 @@
+# ①.venvのDirまで移動
+cd xxx
+# ②仮想環境をアクティベート
+.\.venv\Scripts\Activate
+#　③必要なパッケージをインストール
+pip install -r requirements.txt
