@@ -81,10 +81,11 @@ def scraping(repos, user_time, user_name, user_mail):
 
         if found_today:
             print(f"今日はリポジトリがプッシュされた日です 日付: {global_today}")
-            # メール送信処理
-            mail_sender_main(user_mail)
+
         else:
             print(f"今日はリポジトリがプッシュされていません 日付: {global_today}")
+            # メール送信処理
+            mail_sender_main(user_mail)
     else:
         print("userが設定した時刻と現在の時間が不一致")
         print(f"現在の時間はメールは送信されませんでした ->対象githubユーザー名:{user_name}")
