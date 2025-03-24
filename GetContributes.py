@@ -30,6 +30,7 @@ def scrape(user_time, user_name, user_mail):
     if repos:
         scraping(repos, user_time, user_name, user_mail)
 
+
 def fetch_github_repos(user_name):
     """ GitHub APIからユーザーのリポジトリ情報を取得 """
     token = os.environ.get("GITHUB_TOKEN")  # GitHubのPersonal Access Token
@@ -58,10 +59,10 @@ def fetch_github_repos(user_name):
 def scraping(repos, user_time, user_name, user_mail):
     # 取得したuserのスクレイピング時間か判定
     now_time_judge = False
-    # 現在のUTC時間を取得して30分単位に丸め、日本時間に変換
+    # 現在のUTC時間を取得して15分単位に丸め、日本時間に変換
     current_time_utc = datetime.now(timezone.utc)
     current_time_japan = current_time_utc + timedelta(hours=9)  # 日本時間に変換
-    current_time = round_to_nearest_30_minutes(current_time_japan)
+    current_time = round_to_nearest_15_minutes(current_time_japan)
 
     if user_time == current_time:
         print("userが設定した時刻と現在の時間が一致")
@@ -81,7 +82,6 @@ def scraping(repos, user_time, user_name, user_mail):
 
         if found_today:
             print(f"今日はリポジトリがプッシュされた日です 日付: {global_today}")
-
         else:
             print(f"今日はリポジトリがプッシュされていません 日付: {global_today}")
             # メール送信処理
@@ -92,26 +92,10 @@ def scraping(repos, user_time, user_name, user_mail):
     print("------------------------------------------------")
 
 
-def round_to_nearest_30_minutes(dt):
-    """ 現在の時間を30分単位に丸める関数 """
-    minutes = dt.minute
-    if minutes < 30:
-        rounded_minutes = 0
-    else:
-        rounded_minutes = 30
+def round_to_nearest_15_minutes(dt):
+    """ 現在の時間を15分単位に丸める関数（切り捨て） """
+    rounded_minutes = (dt.minute // 15) * 15  # 15分単位で切り捨て
     tmp_rounded_time = dt.replace(minute=rounded_minutes, second=0, microsecond=0)
     rounded_time = tmp_rounded_time.strftime('%H:%M')
     print(f"GetContributes.py実行時間: {rounded_time} (日本時間)")
     return rounded_time
-
-
-
-
-
-
-
-
-
-
-
-
