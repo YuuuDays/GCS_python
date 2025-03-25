@@ -62,7 +62,12 @@ def scraping(repos, user_time, user_name, user_mail):
     # 現在のUTC時間を取得して15分単位に丸め、日本時間に変換
     current_time_utc = datetime.now(timezone.utc)
     current_time_japan = current_time_utc + timedelta(hours=9)  # 日本時間に変換
+
+    print(f"[DEBUG] UTC時間: {current_time_utc.strftime('%Y-%m-%d %H:%M:%S')}")
+    print(f"[DEBUG] 日本時間: {current_time_japan.strftime('%Y-%m-%d %H:%M:%S')}")
+
     current_time = round_to_nearest_15_minutes(current_time_japan)
+    print(f"[DEBUG] 丸め後の時間: {current_time}")
 
     if user_time == current_time:
         print("userが設定した時刻と現在の時間が一致")
@@ -94,6 +99,11 @@ def scraping(repos, user_time, user_name, user_mail):
 
 def round_to_nearest_15_minutes(dt):
     """ 現在の時間を15分単位に丸める関数（切り捨て） """
+    if dt.second > 0 or dt.microsecond > 0:
+        # 秒単位のずれがあるなら、1分後の時間にしてから丸める
+        dt = dt + timedelta(minutes=1)
+
+
     rounded_minutes = (dt.minute // 15) * 15  # 15分単位で切り捨て
     tmp_rounded_time = dt.replace(minute=rounded_minutes, second=0, microsecond=0)
     rounded_time = tmp_rounded_time.strftime('%H:%M')
