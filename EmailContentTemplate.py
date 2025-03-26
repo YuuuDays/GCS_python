@@ -23,11 +23,12 @@ def define_body():
 
     # メールの本文を作成
     body = (
-        f"Gitへのpushがまだのようです！\n"
-        f"{random_message}\n"
+        f"Gitへのpushがまだのようです！\n\n"
+        f"{random_message}\n\n"
         f"メール停止の際はサイトにアクセスしてユーザ削除を行ってください\n"
         f"{frontend_path}"
     )
+    return body
 
 def define_subject():
     subject = '本日のあなたのGitContributeについて'
