@@ -4,6 +4,8 @@ from dotenv import load_dotenv
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+from EmailContentTemplate import define_subject, define_body
+
 
 def mail_sender_main(user_email):
     # .envファイル読み込み(ローカル用)
@@ -25,15 +27,15 @@ def mail_sender_main(user_email):
 def mail_sender(sender_email, password, user_email):
     # メールの設定
     receiver_email = user_email
-    subject = '本日のあなたのGitContributeについて'
+
     body = 'Gitへのpushがまだのようです！'
 
     # メールメッセージの作成
     msg = MIMEMultipart()
     msg['From'] = sender_email
     msg['To'] = receiver_email
-    msg['Subject'] = subject
-    msg.attach(MIMEText(body, 'plain'))
+    msg['Subject'] = define_subject()
+    msg.attach(MIMEText(define_body(), 'plain'))
 
     # Gmailサーバーへの接続とメール送信
     try:
