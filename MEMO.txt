@@ -4,7 +4,7 @@
 deactivate
 
 # ②DBG(xxxxはポート:デフォ8080)
-functions-framework --target=run_batch --debug --port=xxxx
+functions-framework --target=run_batch --debug --port=8080
 
 # zip
-zip -r GCS_python.zip C:\Users\ponpo\Desktop\★プログラム保管\GCP_Python_Batch\GCP_python
+zip -r GCS_python.zip ./
