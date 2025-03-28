@@ -18,6 +18,7 @@ def define_body():
         "プッシュを忘れずに！",
         "小さな一歩が大きな成果に！",
         "コードを書いたらこまめに保存しよう！"
+        "千里の道も一歩から！！！"
     ]
     random_message = random.choice(messages)
 
