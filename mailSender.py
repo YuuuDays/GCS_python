@@ -7,7 +7,7 @@ from email.mime.text import MIMEText
 from EmailContentTemplate import define_subject, define_body
 
 
-def mail_sender_main(user_email):
+def mail_sender_main(user_email,user_name):
     # .envファイル読み込み(ローカル用)
     load_dotenv()
 
@@ -16,7 +16,7 @@ def mail_sender_main(user_email):
     password = os.getenv("PASSWORD_EMAIL")
 
     if sender_email and password:
-        return mail_sender(sender_email, password, user_email)
+        return mail_sender(sender_email, password, user_email,user_name)
     else:
         # エラーを表示する
         error_msg = "Error: Failed to get E-Mail or App Password"
@@ -24,7 +24,7 @@ def mail_sender_main(user_email):
         return error_msg, 500
 
 
-def mail_sender(sender_email, password, user_email):
+def mail_sender(sender_email, password, user_email,user_name):
     # メールの設定
     receiver_email = user_email
 
@@ -35,7 +35,7 @@ def mail_sender(sender_email, password, user_email):
     msg['From'] = sender_email
     msg['To'] = receiver_email
     msg['Subject'] = define_subject()
-    msg.attach(MIMEText(define_body(), 'plain'))
+    msg.attach(MIMEText(define_body(user_name), 'plain'))
 
     # Gmailサーバーへの接続とメール送信
     try:
