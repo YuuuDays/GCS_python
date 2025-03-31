@@ -90,7 +90,7 @@ def scraping(repos, user_time, user_name, user_mail):
         else:
             print(f"★　メール送信を行います :対象githubユーザー名:\"{user_name}\",ユーザ設定時刻\"{user_time}\"")
             # メール送信処理
-            mail_sender_main(user_mail)
+            mail_sender_main(user_mail,user_name)
     else:
         print("userが設定した時刻と現在の時間が不一致")
         print(f"現在の時間はメールは送信されませんでした :対象githubユーザー名:\"{user_name}\",ユーザ設定時刻\"{user_time}\"")
