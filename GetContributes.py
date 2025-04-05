@@ -6,29 +6,40 @@ from datetime import datetime, timezone, timedelta
 # グローバル変数
 global_today = ""
 
-
+# 概要:GitHubのデータを取得して、メールを送るか判定する
+# @param documents ...DBから取得したUser情報
+# @return
 def get_contribute_main(documents):
     global global_today
     global_today = datetime.today().strftime('%Y-%m-%d')  # 今日の日付を取得
     print(f"-----------★　本日の日付は: {global_today} ------------------")
-    call_contributes(documents)
+    # 情報の取得
+    users =  call_contributes(documents)
+
+    # ユーザの数だけGitHubAPIを取得
+    for user_name, user_time, user_mail in users:
+        # print(user_name, user_time, user_mail)
+
+        # GitHub APIからリポジトリ情報を取得
+        repos = fetch_github_repos(user_name)
+
+        if repos:
+            decide_whether_to_send_mail_base_on_user_info(repos, user_time, user_name, user_mail)
 
 
+
+# documentをタプル in listに入れる
 def call_contributes(documents):
+    result =[]
     for doc in documents:
-        user_info = {
-            'user_name': doc.get("git_name"),
-            'user_time': doc.get("time"),
-            'user_mail': doc.get("mail")
-        }
-        scrape(**user_info)  # 辞書をアンパックして関数に渡す
+        user_info = (
+            doc.get("git_name"),
+            doc.get("time"),
+            doc.get("mail")
+        )
+        result.append(user_info)
+    return result #list[tuple]
 
-
-def scrape(user_time, user_name, user_mail):
-    # GitHub APIからリポジトリ情報を取得
-    repos = fetch_github_repos(user_name)
-    if repos:
-        scraping(repos, user_time, user_name, user_mail)
 
 
 def fetch_github_repos(user_name):
@@ -56,9 +67,11 @@ def fetch_github_repos(user_name):
         return None
 
 
-def scraping(repos, user_time, user_name, user_mail):
+# user情報からメールを送るか判断する
+def decide_whether_to_send_mail_base_on_user_info(repos, user_time, user_name, user_mail):
     # 取得したuserのスクレイピング時間か判定
     now_time_judge = False
+
     # 現在のUTC時間を取得して15分単位に丸め、日本時間に変換
     current_time_utc = datetime.now(timezone.utc)
     current_time_japan = current_time_utc + timedelta(hours=9)  # 日本時間に変換
@@ -81,6 +94,7 @@ def scraping(repos, user_time, user_name, user_mail):
             pushed_at = repo.get('pushed_at')
             if pushed_at:
                 pushed_date = pushed_at[:10]  # yyyy-mm-dd のみ抽出
+                print("pushed_date is" + pushed_date)
                 if pushed_date == global_today:
                     found_today = True
                     break  # 今日のプッシュがあったので、処理を終了

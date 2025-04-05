@@ -68,10 +68,10 @@ def db_read(collection):
 
     # レコード数取得
     documents_count = len(docs_list)
-
+    print(f"取得したドキュメントの数は: {documents_count}")
     # 特定の条件でドキュメントを取得
     # query = {"git_name": "YuuHikida"}
     # document = collection.find_one(query)
 
     print("【DBの値正常読み取れました】")
-    return documents_count, docs_list
+    return docs_list
