@@ -24,8 +24,6 @@ def get_contribute_main(documents):
 
     # ユーザの数だけGitHubAPIを取得
     for user_name, user_time, user_mail in users:
-        # print(user_name, user_time, user_mail)
-
         # GitHub APIからリポジトリ情報(JSON形式)を取得
         repos = fetch_github_repos(user_name)
 
