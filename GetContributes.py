@@ -20,9 +20,9 @@ def get_contribute_main(documents):
 
     print(f"-----------★　本日の日付は: {global_today} ------------------")
     # 情報の取得
-    users = call_contributes(documents)
+    users = get_user_repository(documents)
 
-    # ユーザの数だけGitHubAPIを取得
+    # ユーザ数文,名前,通知時間,メールを取得
     for user_name, user_time, user_mail in users:
         # GitHub APIからリポジトリ情報(JSON形式)を取得
         repos = fetch_github_repos(user_name)
@@ -37,7 +37,7 @@ def get_contribute_main(documents):
 
 
 # documentをタプル in listに入れる
-def call_contributes(documents):
+def get_user_repository(documents):
     result = []
     for doc in documents:
         user_info = (
@@ -116,14 +116,13 @@ def decide_whether_to_send_mail_base_on_user_info(repos, user_time, user_name):
         print("userが設定した時刻と現在の時間が不一致")
         print(
             f"現在の時間はメールは送信されませんでした :対象githubユーザー名:\"{user_name}\",ユーザ設定時刻\"{user_time}\"")
-        print("------------------------------------------------")
 
-    # メール送信判定
-    if has_today_commit:
-        print(f"[DEBUG]今日はリポジトリがプッシュされた日です 日付: {global_today}")
-    else:
-        print(f"[DEBUG] ★メール送信を行います :対象githubユーザー名:\"{user_name}\",ユーザ設定時刻\"{user_time}\"")
-        return True
+    # メール送信判定(ユーザの通知時間が現在時刻と一致、かつ今日のコミットがない場合はTrue)
+    if not has_today_commit:
+        if now_time_judge:
+            print(f"[DEBUG] ★メール送信を行います :対象githubユーザー名:\"{user_name}\",ユーザ設定時刻\"{user_time}\"")
+            print("------------------------------------------------")
+            return True
 
     print("------------------------------------------------")
     return False
