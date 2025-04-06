@@ -16,9 +16,7 @@ def run_batch(request):
             #------------------------------------------------------------
             # DBに接続してuser情報を取得
             #------------------------------------------------------------
-            document_count, documents = db_read(collection)
-
-            print(f"取得したドキュメントの数は: {document_count}")
+            documents = db_read(collection)
 
             #------------------------------------------------------------
             # GitHubAPIに接続

@@ -6,31 +6,41 @@ from datetime import datetime, timezone, timedelta
 # グローバル変数
 global_today = ""
 
+
 # 概要:GitHubのデータを取得して、メールを送るか判定する
 # @param documents ...DBから取得したUser情報
 # @return
 def get_contribute_main(documents):
+    # 今日の日付
     global global_today
     global_today = datetime.today().strftime('%Y-%m-%d')  # 今日の日付を取得
+
+    # メールを送るか判定するフラグ
+    should_send_mail = False
+
     print(f"-----------★　本日の日付は: {global_today} ------------------")
     # 情報の取得
-    users =  call_contributes(documents)
+    users = call_contributes(documents)
 
     # ユーザの数だけGitHubAPIを取得
     for user_name, user_time, user_mail in users:
         # print(user_name, user_time, user_mail)
 
-        # GitHub APIからリポジトリ情報を取得
+        # GitHub APIからリポジトリ情報(JSON形式)を取得
         repos = fetch_github_repos(user_name)
 
+        # 　メール送信判定
         if repos:
-            decide_whether_to_send_mail_base_on_user_info(repos, user_time, user_name, user_mail)
+            should_send_mail = decide_whether_to_send_mail_base_on_user_info(repos, user_time, user_name)
 
+        # メール送信
+        if should_send_mail:
+            mail_sender_main(user_mail, user_name)
 
 
 # documentをタプル in listに入れる
 def call_contributes(documents):
-    result =[]
+    result = []
     for doc in documents:
         user_info = (
             doc.get("git_name"),
@@ -38,8 +48,7 @@ def call_contributes(documents):
             doc.get("mail")
         )
         result.append(user_info)
-    return result #list[tuple]
-
+    return result  # list[tuple]
 
 
 def fetch_github_repos(user_name):
@@ -51,7 +60,6 @@ def fetch_github_repos(user_name):
         "Authorization": f"token {token}",
         "Accept": "application/vnd.github.v3+json"
     }
-
     try:
         response = requests.get(url, headers=headers)
         if response.status_code == 404:
@@ -68,9 +76,11 @@ def fetch_github_repos(user_name):
 
 
 # user情報からメールを送るか判断する
-def decide_whether_to_send_mail_base_on_user_info(repos, user_time, user_name, user_mail):
-    # 取得したuserのスクレイピング時間か判定
+def decide_whether_to_send_mail_base_on_user_info(repos, user_time, user_name):
+    # 取得したuserのスクレイピング時間か判定するフラグ
     now_time_judge = False
+    # 今日のコミットがあるか
+    has_today_commit = False
 
     # 現在のUTC時間を取得して15分単位に丸め、日本時間に変換
     current_time_utc = datetime.now(timezone.utc)
@@ -88,27 +98,37 @@ def decide_whether_to_send_mail_base_on_user_info(repos, user_time, user_name, u
         now_time_judge = True
 
     if now_time_judge:
-        found_today = False
-        # リポジトリ情報を順に処理
+        # 　ユーザの全てのリポジトリの更新履歴を取得
         for repo in repos:
+            # yyyy-mm-dd に成形された値を保持する変数
+            pushed_date = None
+            # ユーザのレポジトリから最終更新日付を取得
             pushed_at = repo.get('pushed_at')
-            if pushed_at:
-                pushed_date = pushed_at[:10]  # yyyy-mm-dd のみ抽出
-                print("pushed_date is" + pushed_date)
-                if pushed_date == global_today:
-                    found_today = True
-                    break  # 今日のプッシュがあったので、処理を終了
 
-        if found_today:
-            print(f"今日はリポジトリがプッシュされた日です 日付: {global_today}")
-        else:
-            print(f"★　メール送信を行います :対象githubユーザー名:\"{user_name}\",ユーザ設定時刻\"{user_time}\"")
-            # メール送信処理
-            mail_sender_main(user_mail,user_name)
+            if pushed_at:
+                # yyyy-mm-dd に成形
+                pushed_date = pushed_at[:10]
+
+            # ユーザのyyyy-mm-ddとuserの最新コミット日付と比較
+            if pushed_date == global_today:
+                has_today_commit = True
+
+            break
     else:
         print("userが設定した時刻と現在の時間が不一致")
-        print(f"現在の時間はメールは送信されませんでした :対象githubユーザー名:\"{user_name}\",ユーザ設定時刻\"{user_time}\"")
+        print(
+            f"現在の時間はメールは送信されませんでした :対象githubユーザー名:\"{user_name}\",ユーザ設定時刻\"{user_time}\"")
+        print("------------------------------------------------")
+
+    # メール送信判定
+    if has_today_commit:
+        print(f"[DEBUG]今日はリポジトリがプッシュされた日です 日付: {global_today}")
+    else:
+        print(f"[DEBUG] ★メール送信を行います :対象githubユーザー名:\"{user_name}\",ユーザ設定時刻\"{user_time}\"")
+        return True
+
     print("------------------------------------------------")
+    return False
 
 
 def round_to_nearest_15_minutes(dt):
@@ -116,7 +136,6 @@ def round_to_nearest_15_minutes(dt):
     if dt.second > 0 or dt.microsecond > 0:
         # 秒単位のずれがあるなら、1分後の時間にしてから丸める
         dt = dt + timedelta(minutes=1)
-
 
     rounded_minutes = (dt.minute // 15) * 15  # 15分単位で切り捨て
     tmp_rounded_time = dt.replace(minute=rounded_minutes, second=0, microsecond=0)
