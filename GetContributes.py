@@ -111,8 +111,7 @@ def should_send_mail(repos, user_time, user_name):
             # ユーザのyyyy-mm-ddとuserの最新コミット日付と比較
             if pushed_date == global_today:
                 has_today_commit = True
-
-            break
+                break
     else:
         print("userが設定した時刻と現在の時間が不一致")
         print(
