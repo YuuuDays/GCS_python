@@ -16,7 +16,7 @@ def get_contribute_main(documents):
     global_today = datetime.today().strftime('%Y-%m-%d')  # 今日の日付を取得
 
     # メールを送るか判定するフラグ
-    should_send_mail = False
+    need_to_send_mail = False
 
     print(f"-----------★　本日の日付は: {global_today} ------------------")
     # 情報の取得
@@ -29,10 +29,11 @@ def get_contribute_main(documents):
 
         # 　メール送信判定
         if repos:
-            should_send_mail = decide_whether_to_send_mail_base_on_user_info(repos, user_time, user_name)
+            need_to_send_mail = should_send_mail(repos, user_time, user_name)
+            print("------------------------------------------------")
 
         # メール送信
-        if should_send_mail:
+        if need_to_send_mail:
             mail_sender_main(user_mail, user_name)
 
 
@@ -74,7 +75,7 @@ def fetch_github_repos(user_name):
 
 
 # user情報からメールを送るか判断する
-def decide_whether_to_send_mail_base_on_user_info(repos, user_time, user_name):
+def should_send_mail(repos, user_time, user_name):
     # 取得したuserのスクレイピング時間か判定するフラグ
     now_time_judge = False
     # 今日のコミットがあるか
@@ -121,10 +122,8 @@ def decide_whether_to_send_mail_base_on_user_info(repos, user_time, user_name):
     if not has_today_commit:
         if now_time_judge:
             print(f"[DEBUG] ★メール送信を行います :対象githubユーザー名:\"{user_name}\",ユーザ設定時刻\"{user_time}\"")
-            print("------------------------------------------------")
             return True
 
-    print("------------------------------------------------")
     return False
 
 
