@@ -119,8 +119,8 @@ def should_send_mail(repos, user_time, user_name):
             f"現在の時間はメールは送信されませんでした :対象githubユーザー名:\"{user_name}\",ユーザ設定時刻\"{user_time}\"")
 
     # メール送信判定(ユーザの通知時間が現在時刻と一致、かつ今日のコミットがない場合はTrue)
-    if not has_today_commit:
-        if now_time_judge:
+    if now_time_judge:
+        if not has_today_commit:
             print(f"[DEBUG] ★メール送信を行います :対象githubユーザー名:\"{user_name}\",ユーザ設定時刻\"{user_time}\"")
             return True
 
