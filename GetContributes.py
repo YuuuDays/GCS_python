@@ -54,7 +54,7 @@ def fetch_github_repos(user_name):
     """ GitHub APIからユーザーのリポジトリ情報を取得 """
     token = os.environ.get("GITHUB_TOKEN")  # GitHubのPersonal Access Token
     url = f"https://api.github.com/users/{user_name}/repos"
-
+    print(f"url={url}")
     headers = {
         "Authorization": f"token {token}",
         "Accept": "application/vnd.github.v3+json"
@@ -99,18 +99,27 @@ def should_send_mail(repos, user_time, user_name):
     if now_time_judge:
         # 　ユーザの全てのリポジトリの更新履歴を取得
         for repo in repos:
-            # yyyy-mm-dd に成形された値を保持する変数
-            pushed_date = None
+            comparative_world_jp_dates = ""    # gitリポジトリは国際時間(日付)の為+9hする変数を保持
+            pushed_date = None              # yyyy-mm-dd に成形された値を保持する変数
+
             # ユーザのレポジトリから最終更新日付を取得
             pushed_at = repo.get('pushed_at')
 
             if pushed_at:
-                # yyyy-mm-dd に成形
-                pushed_date = pushed_at[:10]
+                # UTCの文字列をdatetimeに変換
+                utc_time = datetime.strptime(pushed_at, "%Y-%m-%dT%H:%M:%SZ")
+
+                # 日本時間（UTC+9）
+                japan_time  = utc_time + timedelta(hours=9)
+
+                # "YYYY-MM-DD"形式に整形して返す
+                comparative_world_jp_dates = japan_time .strftime("%Y-%m-%d")
+                print(comparative_world_jp_dates)
 
             # ユーザのyyyy-mm-ddとuserの最新コミット日付と比較
-            if pushed_date == global_today:
+            if comparative_world_jp_dates == global_today:
                 has_today_commit = True
+                print(f"本日のコミットはもうあります。")
                 break
     else:
         print("userが設定した時刻と現在の時間が不一致")
