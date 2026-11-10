@@ -55,7 +55,6 @@ def fetch_github_repos(user_name):
     """ GitHub APIからユーザーのリポジトリ情報を取得 """
     token = os.environ.get("GITHUB_TOKEN")  # GitHubのPersonal Access Token
     url = f"https://api.github.com/users/{user_name}/repos"
-    print(f"url={url}")
     headers = {
         "Authorization": f"token {token}",
         "Accept": "application/vnd.github.v3+json"
