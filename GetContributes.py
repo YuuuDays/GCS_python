@@ -13,7 +13,8 @@ global_today = ""
 def get_contribute_main(documents):
     # 今日の日付
     global global_today
-    global_today = datetime.today().strftime('%Y-%m-%d')  # 今日の日付を取得
+    # 今日の日付を日本時間で取得(サーバはUTCで動くため、+9hしないとJST0〜8時台に前日の日付になる)
+    global_today = (datetime.now(timezone.utc) + timedelta(hours=9)).strftime('%Y-%m-%d')
 
     # メールを送るか判定するフラグ
     need_to_send_mail = False
@@ -81,17 +82,18 @@ def should_send_mail(repos, user_time, user_name):
     # 今日のコミットがあるか
     has_today_commit = False
 
-    # 現在のUTC時間を取得して15分単位に丸め、日本時間に変換
+    # 現在のUTC時間を取得して日本時間に変換し、1時間単位に丸める
     current_time_utc = datetime.now(timezone.utc)
     current_time_japan = current_time_utc + timedelta(hours=9)  # 日本時間に変換
 
     print(f"[DEBUG] UTC時間: {current_time_utc.strftime('%Y-%m-%d %H:%M:%S')}")
     print(f"[DEBUG] 日本時間: {current_time_japan.strftime('%Y-%m-%d %H:%M:%S')}")
 
-    current_time = round_to_nearest_15_minutes(current_time_japan)
-    print(f"[DEBUG] 丸め後の時間: {current_time}")
+    current_hour = round_down_to_hour(current_time_japan)
+    print(f"[DEBUG] 丸め後の時間: {current_hour}:00")
 
-    if user_time == current_time:
+    # 通知は1時間単位。旧仕様(15分単位)で登録された"21:30"等も"時"だけで比較し、21時台に通知する
+    if user_time and user_time.split(":")[0] == current_hour:
         print("userが設定した時刻と現在の時間が一致")
         print(f"処理を開始します->対象githubユーザー名:{user_name}")
         now_time_judge = True
@@ -135,14 +137,12 @@ def should_send_mail(repos, user_time, user_name):
     return False
 
 
-def round_to_nearest_15_minutes(dt):
-    """ 現在の時間を15分単位に丸める関数（切り捨て） """
+def round_down_to_hour(dt):
+    """ 現在の時間を1時間単位に丸める関数（切り捨て）。戻り値は"HH" """
     if dt.second > 0 or dt.microsecond > 0:
-        # 秒単位のずれがあるなら、1分後の時間にしてから丸める
+        # Schedulerの起動遅延で"10:59:59"等になった場合に備え、1分後の時間にしてから丸める
         dt = dt + timedelta(minutes=1)
 
-    rounded_minutes = (dt.minute // 15) * 15  # 15分単位で切り捨て
-    tmp_rounded_time = dt.replace(minute=rounded_minutes, second=0, microsecond=0)
-    rounded_time = tmp_rounded_time.strftime('%H:%M')
-    print(f"GetContributes.py実行時間: {rounded_time} (日本時間)")
-    return rounded_time
+    rounded_hour = dt.strftime('%H')
+    print(f"GetContributes.py実行時間: {rounded_hour}:00 (日本時間)")
+    return rounded_hour
