@@ -1,0 +1,68 @@
+# GCS_python の CI/CD
+#  - CI : PR作成時・masterへのpush時にテストを実行
+#  - CD : masterへのpush時(=PRマージ時)に、テストが通ったら Cloud Functions へ自動デプロイ
+name: CI/CD
+
+on:
+  pull_request:
+    branches: [master]
+  push:
+    branches: [master]
+  workflow_dispatch: # GitHubの画面から手動で実行する用
+
+jobs:
+  # ---------------- CI:テスト ----------------
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: コードを取得
+        uses: actions/checkout@v4
+
+      - name: Pythonをセットアップ
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10" # 本番のランタイム(python310)に合わせる
+
+      - name: テストに必要なライブラリをインストール
+        run: pip install pytest requests python-dotenv
+
+      - name: テストを実行
+        # test_GetContributes.py は実際のGitHub API・メール送信を呼ぶため対象外
+        run: pytest test_hourly.py -v
+
+  # ---------------- CD:本番デプロイ ----------------
+  deploy:
+    needs: test # テストが通ったときだけ実行
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    concurrency: production # デプロイが同時に2つ走らないようにする
+    permissions:
+      contents: read
+      id-token: write # GCPへの認証(Workload Identity連携)に必要
+
+    steps:
+      - name: コードを取得
+        uses: actions/checkout@v4
+
+      - name: GCPに認証
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/202287074098/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: github-deployer@arctic-conduit-432408-m8.iam.gserviceaccount.com
+
+      - name: gcloudをセットアップ
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Cloud Functionsへデプロイ
+        # 環境変数は指定しないので、本番に設定済みのものがそのまま残る
+        run: |
+          gcloud functions deploy run_batch \
+            --no-gen2 \
+            --region=us-central1 \
+            --runtime=python310 \
+            --entry-point=run_batch \
+            --trigger-http \
+            --source=. \
+            --build-service-account=projects/arctic-conduit-432408-m8/serviceAccounts/gcf-builder@arctic-conduit-432408-m8.iam.gserviceaccount.com \
+            --service-account=gcs-batch-runner@arctic-conduit-432408-m8.iam.gserviceaccount.com \
+            --quiet
