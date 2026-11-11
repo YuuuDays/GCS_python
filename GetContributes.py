@@ -16,15 +16,15 @@ def get_contribute_main(documents):
     # 今日の日付を日本時間で取得(サーバはUTCで動くため、+9hしないとJST0〜8時台に前日の日付になる)
     global_today = (datetime.now(timezone.utc) + timedelta(hours=9)).strftime('%Y-%m-%d')
 
-    # メールを送るか判定するフラグ
-    need_to_send_mail = False
-
     print(f"-----------★　本日の日付は: {global_today} ------------------")
     # 情報の取得
     users = get_user_repository(documents)
 
     # ユーザ数文,名前,通知時間,メールを取得
     for user_name, user_time, user_mail in users:
+        # メールを送るか判定するフラグ(ユーザーごとにリセットする)
+        need_to_send_mail = False
+
         # GitHub APIからリポジトリ情報(JSON形式)を取得
         repos = fetch_github_repos(user_name)
 
