@@ -26,7 +26,6 @@ def read_environmental_variables():
 
     # 接続URIを構築
     uri = f"{url_first}{encoded_username}:{encoded_password}{url_second}"
-    print("★接続URI:", uri)
     return uri
 
 
@@ -61,10 +60,6 @@ def db_read(collection):
 
     # ドキュメントリスト作成
     docs_list = list(documents)
-
-    # ドキュメントを表示
-    for doc in docs_list:
-        print(doc)
 
     # レコード数取得
     documents_count = len(docs_list)
