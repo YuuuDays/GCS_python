@@ -44,3 +44,21 @@ def test_early_morning_uses_jst_date(monkeypatch):
 # 今日(JST)pushしていれば送らない
 def test_pushed_today_no_mail(monkeypatch):
     assert run(monkeypatch, datetime(2026, 11, 10, 12, 0, 5, tzinfo=timezone.utc), "21:00", "2026-11-10T03:00:00Z") == 0
+
+# 【不具合G】GitHub APIの取得に失敗したユーザーに、前のユーザーの判定結果が引き継がれない
+# Aさん:21時設定・今日pushなし → 送る
+# Bさん:21時設定・API取得失敗 → 送らない(修正前はAさんの「送る」を引き継いで送っていた)
+def test_api_failure_does_not_inherit_previous_result(monkeypatch):
+    fix_now(monkeypatch, datetime(2026, 11, 10, 12, 0, 5, tzinfo=timezone.utc))  # 21:00 JST
+    sent = []
+    repos = {
+        "user_a": [{"pushed_at": "2026-11-09T10:00:00Z"}],  # 前日のpushのみ
+        "user_b": None,                                     # API取得失敗
+    }
+    monkeypatch.setattr(gc, "fetch_github_repos", lambda name: repos[name])
+    monkeypatch.setattr(gc, "mail_sender_main", lambda mail, name: sent.append(name))
+    gc.get_contribute_main([
+        {"git_name": "user_a", "time": "21:00", "mail": "a@example.com"},
+        {"git_name": "user_b", "time": "21:00", "mail": "b@example.com"},
+    ])
+    assert sent == ["user_a"]
