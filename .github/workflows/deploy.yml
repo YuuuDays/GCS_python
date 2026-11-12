@@ -23,12 +23,12 @@ jobs:
         with:
           python-version: "3.10" # 本番のランタイム(python310)に合わせる
 
-      - name: テストに必要なライブラリをインストール
-        run: pip install pytest requests python-dotenv
+      - name: ライブラリをインストール
+        # 本番と同じrequirements.txtを使い、依存関係の問題もPRの時点で検知する
+        run: pip install -r requirements.txt pytest
 
       - name: テストを実行
-        # test_GetContributes.py は実際のGitHub API・メール送信を呼ぶため対象外
-        run: pytest test_hourly.py -v
+        run: pytest -v
 
   # ---------------- CD:本番デプロイ ----------------
   deploy:
