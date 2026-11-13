@@ -21,7 +21,7 @@ jobs:
       - name: Pythonをセットアップ
         uses: actions/setup-python@v5
         with:
-          python-version: "3.10" # 本番のランタイム(python310)に合わせる
+          python-version: "3.12" # 本番のランタイム(python312)に合わせる
 
       - name: ライブラリをインストール
         # 本番と同じrequirements.txtを使い、依存関係の問題もPRの時点で検知する
@@ -59,7 +59,7 @@ jobs:
           gcloud functions deploy run_batch \
             --no-gen2 \
             --region=us-central1 \
-            --runtime=python310 \
+            --runtime=python312 \
             --entry-point=run_batch \
             --trigger-http \
             --source=. \
