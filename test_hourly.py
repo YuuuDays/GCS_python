@@ -62,3 +62,26 @@ def test_api_failure_does_not_inherit_previous_result(monkeypatch):
         {"git_name": "user_b", "time": "21:00", "mail": "b@example.com"},
     ])
     assert sent == ["user_a"]
+
+# GitHub APIに「push日時の新しい順で1件」を指定して取得している
+# (デフォルトの名前順・30件だと、31件目以降のリポジトリへのpushを見落とすため)
+def test_fetch_requests_latest_pushed_repo(monkeypatch):
+    called = {}
+
+    class FakeResponse:
+        status_code = 200
+
+        def json(self):
+            return [{"pushed_at": "2026-11-13T03:00:00Z"}]
+
+    def fake_get(url, headers=None, params=None):
+        called["url"] = url
+        called["params"] = params
+        return FakeResponse()
+
+    monkeypatch.setattr(gc.requests, "get", fake_get)
+    repos = gc.fetch_github_repos("octocat")
+
+    assert called["url"] == "https://api.github.com/users/octocat/repos"
+    assert called["params"] == {"sort": "pushed", "per_page": 1}
+    assert repos == [{"pushed_at": "2026-11-13T03:00:00Z"}]

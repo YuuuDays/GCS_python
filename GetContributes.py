@@ -52,15 +52,20 @@ def get_user_repository(documents):
 
 
 def fetch_github_repos(user_name):
-    """ GitHub APIからユーザーのリポジトリ情報を取得 """
+    """ GitHub APIからユーザーの「最後にpushされたリポジトリ」を1件取得
+
+    APIのデフォルトは名前順・30件までのため、リポジトリが31件以上あると
+    最新pushのリポジトリが取得範囲から漏れる。push日時の新しい順で1件だけ取得する
+    """
     token = os.environ.get("GITHUB_TOKEN")  # GitHubのPersonal Access Token
     url = f"https://api.github.com/users/{user_name}/repos"
     headers = {
         "Authorization": f"token {token}",
         "Accept": "application/vnd.github.v3+json"
     }
+    params = {"sort": "pushed", "per_page": 1}
     try:
-        response = requests.get(url, headers=headers)
+        response = requests.get(url, headers=headers, params=params)
         if response.status_code == 404:
             print(f"404エラー: {url} が見つかりません。")
             return None
