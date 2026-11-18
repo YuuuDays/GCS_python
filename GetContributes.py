@@ -6,6 +6,22 @@ from datetime import datetime, timezone, timedelta
 # グローバル変数
 global_today = ""
 
+GITHUB_GRAPHQL_URL = "https://api.github.com/graphql"
+
+# 指定期間の草(contributions)の合計数を取得するクエリ
+# privateリポジトリへのコミットも、ユーザーがプロフィールで公開設定していれば数に含まれる
+CONTRIBUTIONS_QUERY = """
+query($login: String!, $from: DateTime!, $to: DateTime!) {
+  user(login: $login) {
+    contributionsCollection(from: $from, to: $to) {
+      contributionCalendar {
+        totalContributions
+      }
+    }
+  }
+}
+"""
+
 
 # 概要:GitHubのデータを取得して、メールを送るか判定する
 # @param documents ...DBから取得したUser情報
@@ -29,9 +45,15 @@ def get_contribute_main(documents):
         repos = fetch_github_repos(user_name)
 
         # 　メール送信判定
-        if repos:
+        # API取得失敗(None)は判定しない。公開リポジトリが0件([])は「pushなし」として判定する
+        if repos is not None:
             need_to_send_mail = should_send_mail(repos, user_time, user_name)
             print("------------------------------------------------")
+
+        # pushが無くても、今日の草(privateリポジトリへのコミット等)があれば送らない
+        if need_to_send_mail and has_today_contributions(user_name):
+            print(f"本日の草(contributions)があるため、メールは送信しません :対象githubユーザー名:\"{user_name}\"")
+            need_to_send_mail = False
 
         # メール送信
         if need_to_send_mail:
@@ -77,6 +99,41 @@ def fetch_github_repos(user_name):
     except requests.RequestException as e:
         print(f"HTTPエラー: {e}")
         return None
+
+
+def has_today_contributions(user_name):
+    """ 今日(日本時間)の草(contributions)が1件以上あるかをGraphQL APIで確認する
+
+    取得に失敗した場合は False を返す(=pushのみで判定していた従来の動きと同じになる)
+    """
+    token = os.environ.get("GITHUB_TOKEN")
+    variables = {
+        "login": user_name,
+        "from": f"{global_today}T00:00:00+09:00",
+        "to": f"{global_today}T23:59:59+09:00",
+    }
+    try:
+        response = requests.post(
+            GITHUB_GRAPHQL_URL,
+            headers={"Authorization": f"bearer {token}"},
+            json={"query": CONTRIBUTIONS_QUERY, "variables": variables},
+            timeout=10,
+        )
+        if response.status_code != 200:
+            print(f"GraphQL HTTPエラー {response.status_code}: 草の取得に失敗しました")
+            return False
+
+        body = response.json()
+        if body.get("errors"):
+            print(f"GraphQLエラー: {body['errors']}")
+            return False
+
+        total = body["data"]["user"]["contributionsCollection"]["contributionCalendar"]["totalContributions"]
+        print(f"本日の草(contributions)の数: {total}")
+        return total > 0
+    except (requests.RequestException, ValueError, KeyError, TypeError) as e:
+        print(f"草の取得中にエラーが発生しました: {e}")
+        return False
 
 
 # user情報からメールを送るか判断する
